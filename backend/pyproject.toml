@@ -1,0 +1,28 @@
+[project]
+name = "backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "black==23.11.0",
+    "fastapi==0.104.1",
+    "flake8==6.1.0",
+    "google-generativeai==0.3.2",
+    "httpx==0.25.2",
+    "isort==5.12.0",
+    "mypy==1.7.1",
+    "passlib[bcrypt]==1.7.4",
+    "pydantic==2.5.0",
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-cov==4.1.0",
+    "python-dotenv==1.0.0",
+    "python-jose[cryptography]==3.3.0",
+    "python-multipart==0.0.6",
+    "slowapi==0.1.9",
+    "uvicorn[standard]==0.24.0",
+]
+
+[scripts]
+dev = "uvicorn:main"
+
+
