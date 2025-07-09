@@ -1,4 +1,4 @@
-# LLM Chat Interface Demo
+# Agents in everyday work
 
 A full-stack chat application featuring a Python FastAPI backend (with Gemini API integration) and a Next.js frontend with real-time streaming.
 
@@ -84,17 +84,11 @@ llm-chat-demo/
 
 ### Option 2: Local Development
 #### Backend
-1. **Setup venv**
+1. **Install dependencies**
    ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   uv sync
    ```
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt  # Or use 'uv pip install --requirements requirements.txt' if using uv
-   ```
-3. **Set environment variables**
+2. **Set environment variables**
    - Create a `.env` file in `backend/` with:
      ```env
      GEMINI_API_KEY=your_gemini_api_key_here
@@ -105,9 +99,9 @@ llm-chat-demo/
      RATE_LIMIT_PER_MINUTE=60
      LOG_LEVEL=INFO
      ```
-4. **Run the backend**
+3. **Run the backend**
    ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   uv run dev
    ```
 
 #### Frontend
