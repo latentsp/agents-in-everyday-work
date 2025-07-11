@@ -1,46 +1,85 @@
 'use client';
 
-import React from 'react';
-import { X } from 'lucide-react';
-import { ChatConfig } from '../types/chat';
-import { cn } from '../utils/cn';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { ChatConfig as ChatConfigType } from '../types/chat';
+import { apiClient } from '../utils/api';
+import { Settings, X, Zap } from 'lucide-react';
 
 interface ChatConfigProps {
-  config: ChatConfig;
-  onConfigChange: (config: Partial<ChatConfig>) => void;
+  config: ChatConfigType;
+  onConfigChange: (config: Partial<ChatConfigType>) => void;
   onClose: () => void;
 }
 
-const ChatConfig: React.FC<ChatConfigProps> = ({
-  config,
-  onConfigChange,
-  onClose,
-}) => {
+const ChatConfig: React.FC<ChatConfigProps> = ({ config, onConfigChange, onClose }) => {
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [availableFunctions, setAvailableFunctions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadAvailableModels();
+    loadAvailableFunctions();
+  }, []);
+
+  const loadAvailableModels = async () => {
+    try {
+      const response = await apiClient.getAvailableModels();
+      setAvailableModels(response.models);
+    } catch (error) {
+      console.error('Failed to load models:', error);
+    }
+  };
+
+  const loadAvailableFunctions = async () => {
+    try {
+      const response = await apiClient.getAvailableFunctions();
+      setAvailableFunctions(response.functions);
+    } catch (error) {
+      console.error('Failed to load functions:', error);
+    }
+  };
+
+  const handleConfigChange = (key: keyof ChatConfigType, value: any) => {
+    onConfigChange({ [key]: value });
+  };
+
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Chat Settings</h3>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="p-6 bg-white border-b border-gray-200"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Settings className="w-5 h-5 text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Chat Configuration</h3>
+        </div>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-gray-500" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Model Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            AI Model
+            Model
           </label>
           <select
             value={config.model}
-            onChange={(e) => onConfigChange({ model: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleConfigChange('model', e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="gemini-flash">Gemini Flash</option>
-            <option value="gemini-pro">Gemini Pro</option>
+            {availableModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -55,11 +94,12 @@ const ChatConfig: React.FC<ChatConfigProps> = ({
             max="2"
             step="0.1"
             value={config.temperature}
-            onChange={(e) => onConfigChange({ temperature: parseFloat(e.target.value) })}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            onChange={(e) => handleConfigChange('temperature', parseFloat(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>Focused</span>
+            <span>Balanced</span>
             <span>Creative</span>
           </div>
         </div>
@@ -67,31 +107,89 @@ const ChatConfig: React.FC<ChatConfigProps> = ({
         {/* Max Tokens */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Max Tokens: {config.maxTokens}
+            Max Tokens
+          </label>
+          <select
+            value={config.maxTokens}
+            onChange={(e) => handleConfigChange('maxTokens', parseInt(e.target.value))}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={1000}>1,000 tokens</option>
+            <option value={5000}>5,000 tokens</option>
+            <option value={10000}>10,000 tokens</option>
+            <option value={20000}>20,000 tokens</option>
+            <option value={28000}>28,000 tokens (max)</option>
+          </select>
+        </div>
+
+        {/* Function Calling Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Function Calling
+          </label>
+          <div className="flex items-center">
+            <div className="inline-flex h-6 w-11 items-center rounded-full bg-blue-600">
+              <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
+            </div>
+            <span className="ml-3 text-sm text-gray-600">Always Enabled</span>
+            <Zap className="w-4 h-4 ml-2 text-blue-600" />
+          </div>
+        </div>
+
+        {/* Max Function Calls */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Max Function Calls: {config.maxFunctionCalls}
           </label>
           <input
             type="range"
-            min="100"
-            max="4000"
-            step="100"
-            value={config.maxTokens}
-            onChange={(e) => onConfigChange({ maxTokens: parseInt(e.target.value) })}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            min="1"
+            max="10"
+            step="1"
+            value={config.maxFunctionCalls}
+            onChange={(e) => handleConfigChange('maxFunctionCalls', parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>Short</span>
-            <span>Long</span>
+            <span>1</span>
+            <span>5</span>
+            <span>10</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-        <p className="text-sm text-blue-800">
-          💡 <strong>Temperature:</strong> Controls response creativity. Lower values (0-0.5) produce more focused,
-          consistent responses. Higher values (1-2) produce more creative, varied responses.
-        </p>
+      {/* Available Functions Section */}
+      {availableFunctions.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Available Functions</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+            {availableFunctions.map((func) => (
+              <div
+                key={func.name}
+                className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <code className="text-sm font-mono text-blue-600">{func.name}</code>
+                </div>
+                <p className="text-xs text-gray-600">{func.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Configuration Summary */}
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+        <h4 className="text-sm font-medium text-blue-900 mb-2">Current Configuration</h4>
+        <div className="text-sm text-blue-800 space-y-1">
+          <div>Model: <span className="font-mono">{config.model}</span></div>
+          <div>Temperature: <span className="font-mono">{config.temperature}</span></div>
+          <div>Max Tokens: <span className="font-mono">{config.maxTokens.toLocaleString()}</span></div>
+          <div>Function Calling: <span className="font-mono">Always Enabled</span></div>
+          <div>Max Function Calls: <span className="font-mono">{config.maxFunctionCalls}</span></div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

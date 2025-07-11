@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ChatMessage, ChatConfig, ChatState } from '../types/chat';
+import { ChatMessage, ChatConfig, ChatState, FunctionCall, FileAttachment } from '../types/chat';
 import { apiClient, ApiError } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const DEFAULT_CONFIG: ChatConfig = {
-  model: 'gemini-flash',
+  model: 'gemini-2.5-flash',
   temperature: 0.7,
-  maxTokens: 1000,
+  maxTokens: 10_000,
+  maxFunctionCalls: 5,
 };
 
 export const useChat = () => {
@@ -38,57 +39,6 @@ export const useChat = () => {
       toast.error('Unable to connect to chat service');
     }
   }, []);
-
-  const sendMessage = useCallback(async (content: string) => {
-    console.log('[useChat] sendMessage called with:', content, 'isLoading:', state.isLoading);
-    if (!content.trim() || state.isLoading) return;
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: content.trim(),
-      timestamp: new Date().toISOString(),
-      message_id: `user-${Date.now()}`,
-    };
-
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      isLoading: true,
-      error: null,
-    }));
-
-    try {
-      await sendRegularMessage(content, userMessage);
-    } catch (error) {
-      handleError(error, userMessage);
-    } finally {
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, [state.messages, state.config, state.isLoading]);
-
-  const sendRegularMessage = useCallback(async (content: string, userMessage: ChatMessage) => {
-    const request = {
-      message: content,
-      conversation_history: state.messages,
-      model: state.config.model,
-      temperature: state.config.temperature,
-      max_tokens: state.config.maxTokens,
-    };
-
-    const response = await apiClient.sendMessage(request);
-
-    const assistantMessage: ChatMessage = {
-      role: 'assistant',
-      content: response.message,
-      timestamp: response.timestamp,
-      message_id: `assistant-${Date.now()}`,
-    };
-
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, assistantMessage],
-    }));
-  }, [state.messages, state.config]);
 
   const handleError = useCallback((error: unknown, userMessage: ChatMessage) => {
     console.error('Chat error:', error);
@@ -121,6 +71,126 @@ export const useChat = () => {
     toast.error(errorMessage);
   }, []);
 
+  const sendUnifiedMessage = useCallback(async (content: string, history: ChatMessage[], userMessage: ChatMessage, files?: FileAttachment[]) => {
+    const request = {
+      message: content,
+      conversation_history: history,
+      model: state.config.model,
+      temperature: state.config.temperature,
+      max_tokens: state.config.maxTokens,
+      max_function_calls: state.config.maxFunctionCalls,
+      attachments: files || [],
+    };
+
+    const response = await apiClient.sendMessage(request, files);
+
+    let assistantContent = response.message;
+
+    // Add function call information if any functions were called
+    if (response.function_calls && response.function_calls.length > 0) {
+      const functionCallsInfo = response.function_calls.map((fc: FunctionCall) =>
+        `\n\n🔧 **Function Called: ${fc.name}**\n` +
+        `Parameters: ${JSON.stringify(fc.arguments, null, 2)}\n` +
+        `Result: ${JSON.stringify(fc.result, null, 2)}`
+      ).join('');
+
+      console.log(functionCallsInfo);
+    }
+
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: assistantContent,
+      timestamp: response.timestamp,
+      message_id: `assistant-${Date.now()}`,
+    };
+
+    setState(prev => ({
+      ...prev,
+      messages: [...prev.messages, assistantMessage],
+    }));
+  }, [state.config]);
+
+  const sendMessage = useCallback(async (content: string, files?: FileAttachment[], options?: { customHistory?: ChatMessage[] }) => {
+    console.log('[useChat] sendMessage called with:', content, 'files:', files?.length || 0, 'isLoading:', state.isLoading);
+    if ((!content.trim() && (!files || files.length === 0)) || state.isLoading) return;
+
+    const history = options?.customHistory ?? state.messages;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: content.trim(),
+      timestamp: new Date().toISOString(),
+      message_id: `user-${Date.now()}`,
+      attachments: files || [],
+    };
+
+    setState(prev => ({
+      ...prev,
+      messages: [...history, userMessage],
+      isLoading: true,
+      error: null,
+    }));
+
+    try {
+      await sendUnifiedMessage(content, history, userMessage, files);
+    } catch (error) {
+      handleError(error, userMessage);
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [state.config, state.isLoading, state.messages, sendUnifiedMessage, handleError]);
+
+  const testFunctionCalling = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      const response = await apiClient.testFunctionCalling();
+
+      if (response.success) {
+        toast.success('Function calling test successful!');
+
+        // Add test messages to the chat
+        const testUserMessage: ChatMessage = {
+          role: 'user',
+          content: 'Function calling test: What\'s the weather like in New York? Also, calculate 15 * 7 and tell me what time it is. Finally, convert 100 USD to EUR.',
+          timestamp: new Date().toISOString(),
+          message_id: `test-user-${Date.now()}`,
+        };
+
+        let assistantContent = response.response || '';
+
+        // Add function call information if any functions were called
+        if (response.function_calls && response.function_calls.length > 0) {
+          const functionCallsInfo = response.function_calls.map((fc: FunctionCall) =>
+            `\n\n🔧 **Function Called: ${fc.name}**\n` +
+            `Parameters: ${JSON.stringify(fc.arguments, null, 2)}\n` +
+            `Result: ${JSON.stringify(fc.result, null, 2)}`
+          ).join('');
+
+          assistantContent += functionCallsInfo;
+        }
+
+        const testAssistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: assistantContent,
+          timestamp: new Date().toISOString(),
+          message_id: `test-assistant-${Date.now()}`,
+        };
+
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, testUserMessage, testAssistantMessage],
+        }));
+      } else {
+        toast.error(`Function calling test failed: ${response.error}`);
+      }
+    } catch (error) {
+      console.error('Function calling test error:', error);
+      toast.error('Function calling test failed');
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
   const clearMessages = useCallback(() => {
     setState(prev => ({
       ...prev,
@@ -136,51 +206,35 @@ export const useChat = () => {
     }));
   }, []);
 
-  const retryLastMessage = useCallback(async () => {
-    const lastUserMessage = state.messages
-      .filter(msg => msg.role === 'user')
-      .pop();
-
-    if (lastUserMessage) {
-      // Remove the last assistant message (if it's an error)
-      const messagesWithoutLastAssistant = state.messages.filter((msg, index) => {
-        if (index === state.messages.length - 1 && msg.role === 'assistant') {
-          return false;
-        }
-        return true;
-      });
-
-      setState(prev => ({
-        ...prev,
-        messages: messagesWithoutLastAssistant,
-      }));
-
-      await sendMessage(lastUserMessage.content);
+  const retryLastMessage = useCallback(() => {
+    const lastUserMessageIndex = state.messages.map(m => m.role).lastIndexOf('user');
+    if (lastUserMessageIndex === -1) {
+      return;
     }
+    const lastUserMessage = state.messages[lastUserMessageIndex];
+    const history = state.messages.slice(0, lastUserMessageIndex);
+
+    sendMessage(lastUserMessage.content, lastUserMessage.attachments, { customHistory: history });
   }, [state.messages, sendMessage]);
 
   const stopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
-    setState(prev => ({ ...prev, isLoading: false }));
   }, []);
 
   return {
-    // State
     messages: state.messages,
     isLoading: state.isLoading,
     error: state.error,
     config: state.config,
     connectionStatus: state.connectionStatus,
-
-    // Actions
     sendMessage,
     clearMessages,
     updateConfig,
     retryLastMessage,
     stopGeneration,
     checkConnection,
+    testFunctionCalling,
   };
 };

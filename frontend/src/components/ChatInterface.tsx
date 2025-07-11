@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useChat } from '../hooks/useChat';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -23,6 +23,7 @@ const ChatInterface: React.FC = () => {
     retryLastMessage,
     stopGeneration,
     checkConnection,
+    testFunctionCalling,
   } = useChat();
 
   const [showConfig, setShowConfig] = useState(false);
@@ -33,9 +34,11 @@ const ChatInterface: React.FC = () => {
       <ChatHeader
         onClearChat={clearMessages}
         onShowConfig={() => setShowConfig(!showConfig)}
+        onTestFunctionCalling={testFunctionCalling}
         showConfig={showConfig}
         connectionStatus={connectionStatus}
         onReconnect={checkConnection}
+        enableFunctionCalling={config.enableFunctionCalling}
       />
 
       {/* Configuration Panel */}
@@ -66,55 +69,22 @@ const ChatInterface: React.FC = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden">
         <MessageList
           messages={messages}
           isLoading={isLoading}
           onRetry={retryLastMessage}
         />
-
-        {/* Loading Overlay */}
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-20 left-1/2 transform -translate-x-1/2"
-          >
-            <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-lg border">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <span className="text-sm text-gray-600 ml-2">AI is thinking...</span>
-            </div>
-          </motion.div>
-        )}
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 p-4 bg-white">
-        <MessageInput
-          onSendMessage={sendMessage}
-          onStopGeneration={stopGeneration}
-          disabled={isLoading}
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Error Toast */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg"
-        >
-          <div className="flex items-center space-x-2">
-            <X className="w-4 h-4" />
-            <span className="text-sm">{error}</span>
-          </div>
-        </motion.div>
-      )}
+      <MessageInput
+        onSendMessage={sendMessage}
+        disabled={isLoading || connectionStatus !== 'connected'}
+        onStopGeneration={stopGeneration}
+        isLoading={isLoading}
+        enableFunctionCalling={config.enableFunctionCalling}
+      />
     </div>
   );
 };

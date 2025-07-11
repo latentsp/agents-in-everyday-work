@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChatMessage } from '../types/chat';
-import { User, Bot, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { User, Bot, Loader2, RefreshCw, AlertCircle, Image, Music, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -72,20 +72,95 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading, onRetry 
                   : 'bg-gray-100 text-gray-900 rounded-bl-sm'
               }`}
             >
+              {/* File attachments */}
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  {message.attachments.map((attachment) => (
+                    <div
+                      key={attachment.id}
+                      className={`border rounded-lg p-2 ${
+                        message.role === 'user'
+                          ? 'border-blue-300 bg-blue-500/20'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      {attachment.type === 'image' && attachment.url ? (
+                        <div className="space-y-2">
+                          <img
+                            src={attachment.url}
+                            alt={attachment.name}
+                            className="max-w-full h-auto rounded max-h-64 object-contain"
+                          />
+                          <div className="flex items-center justify-between text-xs">
+                            <span className={message.role === 'user' ? 'text-blue-100' : 'text-gray-600'}>
+                              {attachment.name}
+                            </span>
+                            <span className={message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}>
+                              {(attachment.size / 1024 / 1024).toFixed(1)} MB
+                            </span>
+                          </div>
+                        </div>
+                      ) : attachment.type === 'audio' && attachment.url ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Music className={`w-4 h-4 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`} />
+                            <span className={`text-sm ${message.role === 'user' ? 'text-blue-100' : 'text-gray-700'}`}>
+                              {attachment.name}
+                            </span>
+                          </div>
+                          <audio
+                            controls
+                            className="w-full max-w-sm"
+                            preload="metadata"
+                          >
+                            <source src={attachment.url} type={attachment.mimeType} />
+                            Your browser does not support the audio element.
+                          </audio>
+                          <div className="text-xs">
+                            <span className={message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}>
+                              {(attachment.size / 1024 / 1024).toFixed(1)} MB
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className={`w-8 h-8 rounded flex items-center justify-center ${
+                            message.role === 'user' ? 'bg-blue-500/30' : 'bg-gray-200'
+                          }`}>
+                            {attachment.type === 'image' ? (
+                              <Image className={`w-4 h-4 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`} />
+                            ) : (
+                              <Music className={`w-4 h-4 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`} />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className={message.role === 'user' ? 'text-blue-100' : 'text-gray-700'}>
+                              {attachment.name}
+                            </div>
+                            <div className={`text-xs ${message.role === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
+                              {(attachment.size / 1024 / 1024).toFixed(1)} MB
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="prose prose-sm max-w-none">
                 {message.role === 'assistant' ? (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight, rehypeRaw]}
                     components={{
-                      code({ node, inline, className, children, ...props }) {
+                      code({ node, className, children, ...props }) {
                         const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
+                        return match ? (
                           <SyntaxHighlighter
-                            style={tomorrow}
+                            style={tomorrow as any}
                             language={match[1]}
                             PreTag="div"
-                            {...props}
                           >
                             {String(children).replace(/\n$/, '')}
                           </SyntaxHighlighter>

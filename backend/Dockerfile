@@ -1,4 +1,4 @@
-FROM python:3.11-slim AS base
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -12,43 +12,23 @@ RUN apt-get update \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Builder stage ----
-FROM base AS builder
-
-# Install uv (copy from official image)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-# Set uv environment variables for best performance in Docker
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
-
+# Set working directory
 WORKDIR /app
 
-# Copy dependency files first for better caching
-COPY pyproject.toml uv.lock ./
+# Copy dependency files
+COPY pyproject.toml ./
 
-# Install Python dependencies (no dev dependencies in production)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+# Install dependencies directly to system Python using pip
+RUN pip install --no-cache-dir -e .
 
 # Copy application code
 COPY . .
-
-# ---- Final stage ----
-FROM base
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser \
     && chown -R appuser:appuser /app
 
-# Copy installed app and venv from builder
-COPY --from=builder /app /app
-
-# Set venv path in PATH
-ENV PATH="/app/.venv/bin:$PATH"
-
 USER appuser
-WORKDIR /app
 
 EXPOSE 8000
 

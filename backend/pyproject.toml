@@ -1,17 +1,18 @@
 [project]
 name = "backend"
 version = "0.1.0"
+authors = ["Guy Maliar <guy@reachlatent.com>"]
 requires-python = ">=3.12"
 dependencies = [
     "black==23.11.0",
     "fastapi==0.104.1",
     "flake8==6.1.0",
-    "google-generativeai==0.3.2",
+    "google-genai>=1.2.0",
     "httpx==0.25.2",
     "isort==5.12.0",
     "mypy==1.7.1",
     "passlib[bcrypt]==1.7.4",
-    "pydantic==2.5.0",
+    "pydantic==2.11.7",
     "pytest==7.4.3",
     "pytest-asyncio==0.21.1",
     "pytest-cov==4.1.0",
@@ -24,5 +25,3 @@ dependencies = [
 
 [scripts]
 dev = "uvicorn:main"
-
-

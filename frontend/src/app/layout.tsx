@@ -6,10 +6,10 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LLM Chat Demo',
+  title: 'Gemini Chatbot Template',
   description: 'A demo chat interface using Google\'s Gemini API with real-time streaming',
   keywords: ['AI', 'Chat', 'Gemini', 'LLM', 'Demo'],
-  authors: [{ name: 'LLM Chat Demo Team' }],
+  authors: [{ name: 'Latent AI', url: 'https://reachlatent.com' }],
   viewport: 'width=device-width, initial-scale=1',
 };
 

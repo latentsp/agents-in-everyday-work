@@ -1,35 +1,36 @@
-# Agents in everyday work
+# Agents in Everyday Work
 
-A full-stack chat application featuring a Python FastAPI backend (with Gemini API integration) and a Next.js frontend with real-time streaming.
+A full-stack chat application featuring a Python FastAPI backend with agent-like capabilities (powered by the Gemini API) and a Next.js frontend with real-time streaming, function calling, and file support.
 
 ---
 
 ## 🚀 Features
-- **Real-time Streaming**: Messages stream live using Server-Sent Events
-- **Conversation History**: Maintains context throughout the chat
-- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
-- **Robust Error Handling**: Retry logic and user-friendly errors
-- **TypeScript**: End-to-end type safety
-- **Markdown Support**: Rich text with syntax highlighting
-- **Configurable AI**: Adjustable temperature, model, and token limits
-- **Connection Monitoring**: Real-time status and auto-reconnect
-- **Rate Limiting**: Prevents abuse
-- **Docker Support**: One-command setup
-- **Accessibility**: ARIA labels, keyboard navigation
+
+- **Agent Framework**: Gemini-powered agent that can use tools to answer questions.
+- **Function Calling**: Responds to queries about weather, math, time, and currency conversion by calling internal tools.
+- **File Uploads**: Supports image and audio file attachments in chat.
+- **Voice-to-Text**: Record and transcribe audio directly in the chat input.
+- **Real-time Streaming**: Model responses stream in real-time using Server-Sent Events.
+- **Conversation History**: Maintains context for coherent, multi-turn conversations.
+- **Markdown Support**: Renders rich text, code blocks, and lists.
+- **Configurable AI**: Adjust temperature, model, and token limits on the fly.
+- **Connection Monitoring**: Real-time status and auto-reconnect.
+- **Docker Support**: One-command setup with Docker Compose.
+- **Responsive Design**: Mobile-friendly UI with Tailwind CSS.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-llm-chat-demo/
+google-workshop-demo/
 ├── backend/                 # FastAPI backend
 │   ├── app/
 │   │   ├── models/         # Pydantic models
-│   │   ├── services/       # Gemini API logic
+│   │   ├── services/       # Gemini API logic & tools
 │   │   ├── routes/         # API endpoints
 │   │   └── main.py         # FastAPI app
-│   ├── pyproject.toml      # Python deps (uv/poetry style)
+│   ├── pyproject.toml      # Python deps
 │   └── Dockerfile          # Backend container
 ├── frontend/               # Next.js frontend
 │   ├── src/
@@ -47,14 +48,14 @@ llm-chat-demo/
 ---
 
 ## 🛠️ Tech Stack
-**Backend:** FastAPI, Google Generative AI SDK, Pydantic, Uvicorn, SlowAPI, python-dotenv
+**Backend:** FastAPI, Google Generative AI SDK, Pydantic, Uvicorn, SlowAPI, python-dotenv, python-multipart
 
-**Frontend:** Next.js 14, TypeScript, Tailwind CSS, Framer Motion, React Hot Toast, React Markdown, Lucide React
+**Frontend:** Next.js 15, TypeScript, Tailwind CSS, Lucide React, React Hot Toast, Framer Motion, React Markdown
 
 ---
 
 ## 📋 Prerequisites
-- Python 3.8+
+- Python 3.12+
 - Node.js 18+
 - Docker & Docker Compose (recommended)
 - Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -70,8 +71,9 @@ llm-chat-demo/
    cd google-workshop-demo
    ```
 2. **Set your Gemini API key**
+   In your shell, export the API key. This will be passed to the Docker container.
    ```bash
-   export GEMINI_API_KEY=your_gemini_api_key_here
+   export GEMINI_API_KEY="your_gemini_api_key_here"
    ```
 3. **Start all services**
    ```bash
@@ -83,21 +85,18 @@ llm-chat-demo/
    - API Docs: http://localhost:8000/docs
 
 ### Option 2: Local Development
+Follow the same setup for environment variables as described in the Docker section, but create `.env` files.
+
 #### Backend
 1. **Install dependencies**
    ```bash
+   cd backend
    uv sync
    ```
 2. **Set environment variables**
    - Create a `.env` file in `backend/` with:
      ```env
-     GEMINI_API_KEY=your_gemini_api_key_here
-     PORT=8000
-     HOST=0.0.0.0
-     DEBUG=true
-     CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-     RATE_LIMIT_PER_MINUTE=60
-     LOG_LEVEL=INFO
+     GEMINI_API_KEY="your_gemini_api_key_here"
      ```
 3. **Run the backend**
    ```bash
@@ -111,11 +110,11 @@ llm-chat-demo/
    npm install
    ```
 2. **Configure environment**
-   - Copy and edit:
+   - Copy `env.local.example` to `.env.local`:
      ```bash
      cp env.local.example .env.local
-     # (Edit .env.local if needed)
      ```
+     The default settings should work for local development.
 3. **Run the frontend**
    ```bash
    npm run dev
@@ -125,57 +124,48 @@ llm-chat-demo/
 
 ## 🔧 Configuration
 
-### Backend (`.env`)
-- `GEMINI_API_KEY` (required)
-- `PORT` (default: 8000)
-- `HOST` (default: 0.0.0.0)
-- `DEBUG` (default: true)
-- `CORS_ORIGINS` (default: http://localhost:3000,http://127.0.0.1:3000)
-- `RATE_LIMIT_PER_MINUTE` (default: 60)
-- `LOG_LEVEL` (default: INFO)
+### Backend (`backend/.env`)
+- `GEMINI_API_KEY` (required): Your API key for the Gemini service.
 
-### Frontend (`.env.local`)
-- `NEXT_PUBLIC_API_URL` (default: http://localhost:8000/api/v1)
-- `NEXT_PUBLIC_APP_NAME` (default: LLM Chat Demo)
-- `NEXT_PUBLIC_APP_VERSION` (default: 1.0.0)
+### Frontend (`frontend/.env.local`)
+- `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000/api/v1`): URL of the backend API.
+- `NEXT_PUBLIC_APP_NAME` (default: `Agent Chat`): The application name displayed in the UI.
 
 ---
 
 ## 📡 API Endpoints
-- `GET /health` — Basic health check
-- `GET /api/v1/health` — Health + Gemini status
-- `GET /api/v1/models` — List available models
-- `POST /api/v1/chat` — Send message (non-streaming)
-- `POST /api/v1/chat/test` — Test endpoint
 
-**Sample request:**
-```json
-{
-  "message": "Hello, how are you?",
-  "conversation_history": [
-    { "role": "user", "content": "Previous message", "timestamp": "2024-01-01T12:00:00Z" }
-  ],
-  "model": "gemini-flash",
-  "temperature": 0.7,
-  "max_tokens": 1000
-}
-```
+All endpoints are prefixed with `/api/v1`.
+
+- `GET /health`: Health check for API and Gemini connection status.
+- `GET /models`: Fetches a list of available Gemini models.
+- `GET /functions`: Lists all available tools the agent can use (e.g., `get_weather`, `calculate_math`).
+
+- `POST /chat`: The main chat endpoint. It accepts `multipart/form-data` including:
+  - `message` (string): The user's message.
+  - `conversation_history` (string): A JSON-serialized array of previous messages.
+  - `files` (file): One or more files (image or audio).
+  - Other optional parameters like `model`, `temperature`, etc.
+
+- `POST /chat/transcribe`: Transcribes an audio file into text.
+  - `file` (file): The audio file to transcribe.
+
+For detailed request/response schemas, see the auto-generated OpenAPI docs at `http://localhost:8000/docs`.
 
 ---
 
 ## 🎨 UI Features
-- **Streaming chat** with typing indicators
-- **Markdown** with syntax highlighting
-- **Timestamps** and retry
-- **Auto-scroll**
-- **Keyboard shortcuts** (Enter to send, Shift+Enter for newline)
-- **Config panel**: Model, temperature, tokens, streaming toggle
-- **Error handling**: Connection, rate limit, network, graceful fallback
-
+- **Function Calling**: A "zap" icon indicates when the agent can use tools. The placeholder text also provides examples.
+- **File Attachments**: Attach images or audio using the paperclip icon. Previews show file info and allow removal.
+- **Voice Recording**: Use the microphone icon to record audio, which is then transcribed and added to the input field.
+- **Streaming & Markdown**: Messages stream in and are rendered with full Markdown support.
+- **Configuration Panel**: A sidebar allows real-time adjustment of the model, temperature, and token limits.
 
 ---
 
 ## 📦 Development
+Standard linting, formatting, and type-checking scripts are available in both `frontend` and `backend` directories.
+
 - **Backend:**
   ```bash
   cd backend
@@ -209,22 +199,21 @@ llm-chat-demo/
   ```
 
 **Production tips:**
-- Set `DEBUG=false` in production
-- Use proper CORS origins
-- Configure rate limiting
-- Set up monitoring/logging
-- Use HTTPS
-- Consider a reverse proxy (nginx)
+- Set `DEBUG=false` in production.
+- Use proper CORS origins.
+- Configure rate limiting.
+- Set up monitoring/logging.
+- Use HTTPS.
+- Consider a reverse proxy (nginx).
 
 ---
 
 ## 🛠️ Troubleshooting
-- **Gemini API key errors:** Ensure your key is valid and has quota ([get one here](https://makersuite.google.com/app/apikey)).
+- **Gemini API key errors:** Ensure your key is valid and has quota.
 - **Port conflicts:** Make sure ports 3000 (frontend) and 8000 (backend) are free.
 - **Docker issues:** Try `docker-compose down -v` to reset volumes, or rebuild with `--build`.
-- **.env not loaded:** Double-check your `.env` files and variable names.
-- **CORS errors:** Ensure `CORS_ORIGINS` includes your frontend URL.
-- **API not responding:** Check logs (`docker-compose logs -f`) and ensure both services are healthy.
+- **Microphone not working:** Ensure you have granted microphone permissions to the website in your browser settings.
+- **CORS errors:** Ensure `CORS_ORIGINS` in your backend `.env` file includes your frontend URL.
 
 ---
 
@@ -237,23 +226,8 @@ llm-chat-demo/
 ---
 
 ## 📄 License
-MIT — see [LICENSE](LICENSE)
+MIT
 
 ---
 
-## 🙏 Acknowledgments
-- [Google AI Studio](https://makersuite.google.com/) (Gemini API)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-
----
-
-## 📞 Support
-- Check [Issues](../../issues)
-- Review API docs at http://localhost:8000/docs
-- Ensure your Gemini API key is valid
-
----
-
-**Happy chatting! 🤖💬**
+**Happy chatting from the Latent team! 🤖💬**
