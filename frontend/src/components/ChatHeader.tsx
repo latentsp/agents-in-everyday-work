@@ -7,21 +7,17 @@ import { cn } from '../utils/cn';
 interface ChatHeaderProps {
   onClearChat: () => void;
   onShowConfig: () => void;
-  onTestFunctionCalling?: () => void;
   showConfig: boolean;
   connectionStatus: 'connected' | 'disconnected' | 'connecting';
   onReconnect: () => void;
-  enableFunctionCalling?: boolean;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
   onClearChat,
   onShowConfig,
-  onTestFunctionCalling,
   showConfig,
   connectionStatus,
   onReconnect,
-  enableFunctionCalling = false,
 }) => {
   const getStatusIcon = () => {
     switch (connectionStatus) {
@@ -60,13 +56,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           <div className="flex items-center gap-2 text-sm text-gray-500">
             {getStatusIcon()}
             <span>{getStatusText()}</span>
-            {enableFunctionCalling && (
-              <>
-                <span className="text-gray-300">•</span>
-                <Zap className="w-3 h-3 text-blue-500" />
-                <span className="text-blue-600">Functions Enabled</span>
-              </>
-            )}
+            <Zap className="w-3 h-3 text-blue-500" />
+            <span className="text-blue-600">Functions Enabled</span>
           </div>
         </div>
       </div>

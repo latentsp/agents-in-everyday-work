@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "@types/node": "^24.0.13",
+    "@types/react": "^19.1.8",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "lucide-react": "^0.525.0",
+    "motion": "^12.23.3",
+    "react": "^19.1.0",
+    "react-hot-toast": "^2.5.2"
+  }
+}

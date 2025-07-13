@@ -122,20 +122,6 @@ const ChatConfig: React.FC<ChatConfigProps> = ({ config, onConfigChange, onClose
           </select>
         </div>
 
-        {/* Function Calling Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Function Calling
-          </label>
-          <div className="flex items-center">
-            <div className="inline-flex h-6 w-11 items-center rounded-full bg-blue-600">
-              <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
-            </div>
-            <span className="ml-3 text-sm text-gray-600">Always Enabled</span>
-            <Zap className="w-4 h-4 ml-2 text-blue-600" />
-          </div>
-        </div>
-
         {/* Max Function Calls */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

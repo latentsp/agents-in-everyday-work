@@ -90,7 +90,7 @@ class ApiClient {
     request: ChatWithFunctionsRequest,
     files?: FileAttachment[]
   ): Promise<ChatWithFunctionsResponse> {
-    // If files are present, use multipart/form-data
+    // Use multipart/form-data for file uploads
     const formData = new FormData();
 
     // Add text fields
@@ -114,26 +114,27 @@ class ApiClient {
     formData.append('max_tokens', request.max_tokens?.toString() || '10000');
     formData.append('max_function_calls', request.max_function_calls?.toString() || '5');
 
-    // Add files from history
-    if (request.conversation_history) {
-      request.conversation_history.forEach(msg => {
-        if (msg.attachments) {
-          msg.attachments.forEach(attachment => {
-            if (attachment.file) {
-              formData.append('files', attachment.file);
-            }
-          });
+    // Collect all file IDs from conversation history
+    const historyFileIds = new Set<string>();
+    (request.conversation_history || []).forEach(msg => {
+      msg.attachments?.forEach(att => {
+        if (att.id) historyFileIds.add(att.id);
+      });
+    });
+
+    // Add files from conversation history
+    (request.conversation_history || []).forEach(msg => {
+      msg.attachments?.forEach(attachment => {
+        if (attachment.file) {
+          formData.append('files', attachment.file);
         }
       });
-    }
+    });
 
-    // Add new files. The 'files' parameter contains files for the current message.
+    // Add new files from the files parameter only if not already present
     if (files) {
       files.forEach((attachment) => {
-        if (attachment.file) {
-          // To avoid duplicates, we could check if the file is already in the form data.
-          // However, for simplicity, we'll rely on the backend to handle potential duplicates
-          // if the same file is re-attached. The main goal here is to ensure all context is sent.
+        if (attachment.file && !historyFileIds.has(attachment.id)) {
           formData.append('files', attachment.file);
         }
       });
@@ -187,12 +188,6 @@ class ApiClient {
 
   async getAvailableFunctions(): Promise<AvailableFunctionsResponse> {
     return this.request<AvailableFunctionsResponse>('/functions');
-  }
-
-  async testFunctionCalling(): Promise<{ success: boolean; response?: string; function_calls?: any[]; error?: string }> {
-    return this.request('/chat/test', {
-      method: 'POST',
-    });
   }
 
   async transcribeAudio(

@@ -26,4 +26,4 @@ dependencies = [
 ]
 
 [scripts]
-dev = "uvicorn:main"
+dev = "uvicorn app.main:app --reload"

@@ -24,14 +24,17 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("app.log") if os.getenv("LOG_TO_FILE", "false").lower() == "true" else logging.NullHandler()
-    ]
+        logging.FileHandler("app.log")
+        if os.getenv("LOG_TO_FILE", "false").lower() == "true"
+        else logging.NullHandler(),
+    ],
 )
 
 logger = logging.getLogger(__name__)
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,14 +49,19 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down LLM Chat API...")
 
+
 # Create FastAPI app
 app = FastAPI(
     title="LLM Chat API",
     description="A FastAPI-based chat service using Google's Gemini API with streaming support",
     version="1.0.0",
-    docs_url="/docs" if os.getenv("ENVIRONMENT", "development") == "development" else None,
-    redoc_url="/redoc" if os.getenv("ENVIRONMENT", "development") == "development" else None,
-    lifespan=lifespan
+    docs_url="/docs"
+    if os.getenv("ENVIRONMENT", "development") == "development"
+    else None,
+    redoc_url="/redoc"
+    if os.getenv("ENVIRONMENT", "development") == "development"
+    else None,
+    lifespan=lifespan,
 )
 
 # Add rate limiter to app state
@@ -72,10 +80,28 @@ app.add_middleware(
 # Trusted host middleware (for production)
 if os.getenv("ENVIRONMENT") == "production":
     trusted_hosts = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1").split(",")
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=trusted_hosts
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
+
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all incoming requests."""
+    start_time = time.time()
+
+    # Log request
+    logger.info(
+        f"Request: {request.method} {request.url.path} from {request.client.host}"
     )
+
+    response = await call_next(request)
+
+    # Log response
+    process_time = time.time() - start_time
+    logger.info(f"Response: {response.status_code} in {process_time:.3f}s")
+
+    return response
+
 
 # Request timing middleware
 @app.middleware("http")
@@ -87,25 +113,10 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
-# Request logging middleware
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    """Log all incoming requests."""
-    start_time = time.time()
-
-    # Log request
-    logger.info(f"Request: {request.method} {request.url.path} from {request.client.host}")
-
-    response = await call_next(request)
-
-    # Log response
-    process_time = time.time() - start_time
-    logger.info(f"Response: {response.status_code} in {process_time:.3f}s")
-
-    return response
 
 # Include routers
 app.include_router(chat_router, prefix="/api/v1")
+
 
 # Root endpoint
 @app.get("/")
@@ -116,8 +127,9 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/api/v1/health",
-        "timestamp": time.time()
+        "timestamp": time.time(),
     }
+
 
 # Health check endpoint
 @app.get("/health")
@@ -127,12 +139,14 @@ async def health_check():
         "status": "healthy",
         "service": "llm-chat-api",
         "version": "1.0.0",
-        "timestamp": time.time()
+        "timestamp": time.time(),
     }
+
 
 # Error handlers
 app.add_exception_handler(RateLimitExceeded, ratelimit_handler)
 app.add_exception_handler(Exception, general_exception_handler)
+
 
 # 404 handler
 @app.exception_handler(404)
@@ -143,9 +157,10 @@ async def not_found_handler(request: Request, exc: Exception):
         content={
             "error": "Not found",
             "detail": f"The requested resource {request.url.path} was not found",
-            "timestamp": time.time()
-        }
+            "timestamp": time.time(),
+        },
     )
+
 
 if __name__ == "__main__":
     import uvicorn
@@ -162,5 +177,5 @@ if __name__ == "__main__":
         host=host,
         port=port,
         reload=debug,
-        log_level=os.getenv("LOG_LEVEL", "info").lower()
+        log_level=os.getenv("LOG_LEVEL", "info").lower(),
     )

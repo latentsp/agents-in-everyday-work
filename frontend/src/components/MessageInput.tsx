@@ -12,7 +12,7 @@ interface MessageInputProps {
   onStopGeneration?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
-  enableFunctionCalling?: boolean;
+  // Removed enableFunctionCalling
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -20,7 +20,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   onStopGeneration,
   disabled = false,
   isLoading = false,
-  enableFunctionCalling = false,
+  // Removed enableFunctionCalling
 }) => {
   const [message, setMessage] = useState('');
   const [isComposing, setIsComposing] = useState(false);
@@ -184,22 +184,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const isSendDisabled = (!message.trim() && attachments.length === 0) || disabled || isComposing;
 
   const getPlaceholderText = () => {
-    if (enableFunctionCalling) {
-      return "Ask me anything! I can help with weather, math, time, and currency conversion... You can also attach images or audio files. (Press Enter to send, Shift+Enter for new line)";
-    }
-    return "Type your message or attach files... (Press Enter to send, Shift+Enter for new line)";
+    return "Ask me anything! (Press Enter to send, Shift+Enter for new line)";
   };
 
   return (
     <div className="p-4 bg-white border-t border-gray-200">
-      {/* Function Calling Status */}
-      {enableFunctionCalling && (
-        <div className="flex items-center gap-2 mb-3 text-sm text-blue-600">
-          <Zap className="w-4 h-4" />
-          <span>Function calling enabled - I can help with weather, calculations, time, and currency conversion!</span>
-        </div>
-      )}
-
       {/* File Attachments Preview */}
       {attachments.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -302,7 +291,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "placeholder:text-gray-400",
               "transition-all duration-200",
-              enableFunctionCalling && "border-blue-200 bg-blue-50/30"
+              // Removed enableFunctionCalling && "border-blue-200 bg-blue-50/30"
             )}
             rows={1}
             style={{ minHeight: '44px', maxHeight: '120px' }}

@@ -23,7 +23,6 @@ const ChatInterface: React.FC = () => {
     retryLastMessage,
     stopGeneration,
     checkConnection,
-    testFunctionCalling,
   } = useChat();
 
   const [showConfig, setShowConfig] = useState(false);
@@ -34,11 +33,9 @@ const ChatInterface: React.FC = () => {
       <ChatHeader
         onClearChat={clearMessages}
         onShowConfig={() => setShowConfig(!showConfig)}
-        onTestFunctionCalling={testFunctionCalling}
         showConfig={showConfig}
         connectionStatus={connectionStatus}
         onReconnect={checkConnection}
-        enableFunctionCalling={config.enableFunctionCalling}
       />
 
       {/* Configuration Panel */}
@@ -83,7 +80,6 @@ const ChatInterface: React.FC = () => {
         disabled={isLoading || connectionStatus !== 'connected'}
         onStopGeneration={stopGeneration}
         isLoading={isLoading}
-        enableFunctionCalling={config.enableFunctionCalling}
       />
     </div>
   );

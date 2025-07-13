@@ -30,12 +30,12 @@ export const useChat = () => {
 
   const checkConnection = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, connectionStatus: 'connecting' }));
+      setState((prev: ChatState) => ({ ...prev, connectionStatus: 'connecting' }));
       await apiClient.healthCheck();
-      setState(prev => ({ ...prev, connectionStatus: 'connected' }));
+      setState((prev: ChatState) => ({ ...prev, connectionStatus: 'connected' }));
     } catch (error) {
       console.error('API connection failed:', error);
-      setState(prev => ({ ...prev, connectionStatus: 'disconnected' }));
+      setState((prev: ChatState) => ({ ...prev, connectionStatus: 'disconnected' }));
       toast.error('Unable to connect to chat service');
     }
   }, []);
@@ -62,7 +62,7 @@ export const useChat = () => {
       message_id: `error-${Date.now()}`,
     };
 
-    setState(prev => ({
+    setState((prev: ChatState) => ({
       ...prev,
       messages: [...prev.messages, errorResponse],
       error: errorMessage,
@@ -104,7 +104,7 @@ export const useChat = () => {
       message_id: `assistant-${Date.now()}`,
     };
 
-    setState(prev => ({
+    setState((prev: ChatState) => ({
       ...prev,
       messages: [...prev.messages, assistantMessage],
     }));
@@ -124,7 +124,7 @@ export const useChat = () => {
       attachments: files || [],
     };
 
-    setState(prev => ({
+    setState((prev: ChatState) => ({
       ...prev,
       messages: [...history, userMessage],
       isLoading: true,
@@ -136,63 +136,12 @@ export const useChat = () => {
     } catch (error) {
       handleError(error, userMessage);
     } finally {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev: ChatState) => ({ ...prev, isLoading: false }));
     }
   }, [state.config, state.isLoading, state.messages, sendUnifiedMessage, handleError]);
 
-  const testFunctionCalling = useCallback(async () => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      const response = await apiClient.testFunctionCalling();
-
-      if (response.success) {
-        toast.success('Function calling test successful!');
-
-        // Add test messages to the chat
-        const testUserMessage: ChatMessage = {
-          role: 'user',
-          content: 'Function calling test: What\'s the weather like in New York? Also, calculate 15 * 7 and tell me what time it is. Finally, convert 100 USD to EUR.',
-          timestamp: new Date().toISOString(),
-          message_id: `test-user-${Date.now()}`,
-        };
-
-        let assistantContent = response.response || '';
-
-        // Add function call information if any functions were called
-        if (response.function_calls && response.function_calls.length > 0) {
-          const functionCallsInfo = response.function_calls.map((fc: FunctionCall) =>
-            `\n\n🔧 **Function Called: ${fc.name}**\n` +
-            `Parameters: ${JSON.stringify(fc.arguments, null, 2)}\n` +
-            `Result: ${JSON.stringify(fc.result, null, 2)}`
-          ).join('');
-
-          assistantContent += functionCallsInfo;
-        }
-
-        const testAssistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: assistantContent,
-          timestamp: new Date().toISOString(),
-          message_id: `test-assistant-${Date.now()}`,
-        };
-
-        setState(prev => ({
-          ...prev,
-          messages: [...prev.messages, testUserMessage, testAssistantMessage],
-        }));
-      } else {
-        toast.error(`Function calling test failed: ${response.error}`);
-      }
-    } catch (error) {
-      console.error('Function calling test error:', error);
-      toast.error('Function calling test failed');
-    } finally {
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, []);
-
   const clearMessages = useCallback(() => {
-    setState(prev => ({
+    setState((prev: ChatState) => ({
       ...prev,
       messages: [],
       error: null,
@@ -200,7 +149,7 @@ export const useChat = () => {
   }, []);
 
   const updateConfig = useCallback((newConfig: Partial<ChatConfig>) => {
-    setState(prev => ({
+    setState((prev: ChatState) => ({
       ...prev,
       config: { ...prev.config, ...newConfig },
     }));
@@ -235,6 +184,5 @@ export const useChat = () => {
     retryLastMessage,
     stopGeneration,
     checkConnection,
-    testFunctionCalling,
   };
 };
