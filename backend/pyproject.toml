@@ -1,7 +1,9 @@
 [project]
 name = "backend"
 version = "0.1.0"
-authors = ["Guy Maliar <guy@reachlatent.com>"]
+authors = [
+  { name = "Guy Maliar", email = "guy@reachlatent.com" },
+]
 requires-python = ">=3.12"
 dependencies = [
     "black==23.11.0",
