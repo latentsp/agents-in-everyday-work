@@ -113,6 +113,11 @@ class ApiClient {
     formData.append('temperature', request.temperature?.toString() || '0.7');
     formData.append('max_tokens', request.max_tokens?.toString() || '10000');
     formData.append('max_function_calls', request.max_function_calls?.toString() || '5');
+    
+    // Add system prompt if provided
+    if (request.system_prompt) {
+      formData.append('system_prompt', request.system_prompt);
+    }
 
     // Collect all file IDs from conversation history
     const historyFileIds = new Set<string>();

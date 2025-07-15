@@ -144,6 +144,23 @@ const ChatConfig: React.FC<ChatConfigProps> = ({ config, onConfigChange, onClose
         </div>
       </div>
 
+      {/* System Prompt */}
+      <div className="col-span-1 md:col-span-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          System Prompt
+        </label>
+        <textarea
+          value={config.systemPrompt || ''}
+          onChange={(e) => handleConfigChange('systemPrompt', e.target.value)}
+          placeholder="Enter system instructions to guide the AI's behavior..."
+          rows={3}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Optional instructions that define how the AI should behave and respond
+        </p>
+      </div>
+
       {/* Available Functions Section */}
       {availableFunctions.length > 0 && (
         <div className="mt-6">
@@ -173,6 +190,7 @@ const ChatConfig: React.FC<ChatConfigProps> = ({ config, onConfigChange, onClose
           <div>Max Tokens: <span className="font-mono">{config.maxTokens.toLocaleString()}</span></div>
           <div>Function Calling: <span className="font-mono">Always Enabled</span></div>
           <div>Max Function Calls: <span className="font-mono">{config.maxFunctionCalls}</span></div>
+          <div>System Prompt: <span className="font-mono">{config.systemPrompt ? 'Configured' : 'None'}</span></div>
         </div>
       </div>
     </motion.div>

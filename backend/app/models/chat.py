@@ -52,6 +52,7 @@ class ChatMessage(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+
 class ChatRequest(BaseModel):
     """Request model for chat API endpoints."""
     message: str = Field(..., min_length=1, description="User message")
@@ -59,6 +60,7 @@ class ChatRequest(BaseModel):
     model: Optional[str] = Field(default="gemini-2.5-flash", description="AI model to use")
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0, description="Response creativity (0-2)")
     max_tokens: Optional[int] = Field(default=10_000, ge=1, le=28_000, description="Maximum response length")
+    system_prompt: Optional[str] = Field(default=None, description="System prompt to set AI behavior")
 
     @validator('message')
     def validate_message(cls, v):
@@ -75,6 +77,7 @@ class ChatRequest(BaseModel):
         if len(v) > 50:  # Limit conversation history to prevent token overflow
             raise ValueError('Conversation history too long (max 50 messages)')
         return v
+
 
 class ChatResponse(BaseModel):
     """Response model for chat API endpoints."""
@@ -89,6 +92,7 @@ class ChatResponse(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+
 class ErrorResponse(BaseModel):
     """Error response model."""
     error: str = Field(..., description="Error message")
@@ -101,11 +105,13 @@ class ErrorResponse(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+
 class FunctionCall(BaseModel):
     """Function call information."""
     name: str
     arguments: Dict[str, Any]
     result: Dict[str, Any]
+
 
 class ChatWithFunctionsRequest(BaseModel):
     """Request model for chat with function calling."""
@@ -116,6 +122,7 @@ class ChatWithFunctionsRequest(BaseModel):
     max_tokens: Optional[int] = Field(default=10_000, ge=1, le=28_000, description="Maximum response length")
     max_function_calls: Optional[int] = Field(default=5, ge=1, le=10, description="Maximum function calls per message")
     attachments: Optional[List[FileAttachment]] = Field(default=[], description="File attachments")
+    system_prompt: Optional[str] = Field(default=None, description="System prompt to set AI behavior")
 
     @validator('message')
     def validate_message(cls, v):
@@ -133,6 +140,7 @@ class ChatWithFunctionsRequest(BaseModel):
             raise ValueError('Conversation history too long (max 50 messages)')
         return v
 
+
 class ChatWithFunctionsResponse(BaseModel):
     """Response model for chat with function calling."""
     message: str = Field(..., description="The response message from the AI model.")
@@ -143,15 +151,18 @@ class ChatWithFunctionsResponse(BaseModel):
     usage: Optional[Dict[str, Any]] = Field(default=None, description="Token usage information.")
     finish_reason: Optional[str] = Field(default=None, description="Reason the model stopped generating tokens.")
 
+
 class TranscriptionResponse(BaseModel):
     """Response model for audio transcription."""
     transcription: str = Field(..., description="The transcribed text from the audio.")
+
 
 class FunctionInfo(BaseModel):
     """Information about available functions."""
     name: str
     description: str
     parameters: Dict[str, Any]
+
 
 class AvailableFunctionsResponse(BaseModel):
     """Response model for available functions."""
