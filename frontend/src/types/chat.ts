@@ -21,6 +21,7 @@ export interface ChatConfig {
   temperature: number;
   maxTokens: number;
   maxFunctionCalls?: number;
+  systemPrompt?: string;
 }
 
 export interface ChatState {
@@ -61,6 +62,7 @@ export interface ChatWithFunctionsRequest {
   max_tokens?: number;
   max_function_calls?: number;
   attachments?: FileAttachment[]; // Added support for file attachments
+  system_prompt?: string;
 }
 
 export interface ChatWithFunctionsResponse {

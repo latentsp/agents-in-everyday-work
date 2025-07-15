@@ -10,6 +10,7 @@ const DEFAULT_CONFIG: ChatConfig = {
   temperature: 0.7,
   maxTokens: 10_000,
   maxFunctionCalls: 5,
+  systemPrompt: '',
 };
 
 export const useChat = () => {
@@ -80,6 +81,7 @@ export const useChat = () => {
       max_tokens: state.config.maxTokens,
       max_function_calls: state.config.maxFunctionCalls,
       attachments: files || [],
+      system_prompt: state.config.systemPrompt,
     };
 
     const response = await apiClient.sendMessage(request, files);

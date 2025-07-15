@@ -29,6 +29,7 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 gemini_service = GeminiService()
 
+
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
@@ -46,6 +47,7 @@ async def health_check():
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service unhealthy")
 
+
 @router.get("/models")
 async def get_available_models():
     """Get list of available AI models."""
@@ -60,6 +62,7 @@ async def get_available_models():
         logger.error(f"Failed to get models: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve models")
 
+
 @router.post("/chat", response_model=ChatWithFunctionsResponse)
 @limiter.limit("60/minute")
 async def chat(
@@ -70,6 +73,7 @@ async def chat(
     temperature: Optional[float] = Form(default=0.7),
     max_tokens: Optional[int] = Form(default=10000),
     max_function_calls: Optional[int] = Form(default=5),
+    system_prompt: Optional[str] = Form(default=None),
     files: List[UploadFile] = File(default=[])
 ):
     """Chat endpoint with function calling support and file upload capability."""
@@ -111,7 +115,8 @@ async def chat(
             temperature=temperature,
             max_tokens=max_tokens,
             max_function_calls=max_function_calls,
-            attachments=file_attachments
+            attachments=file_attachments,
+            system_prompt=system_prompt
         )
 
         response_data = await gemini_service.get_chat_response_with_functions(
@@ -121,7 +126,8 @@ async def chat(
             temperature=chat_request.temperature,
             max_tokens=chat_request.max_tokens,
             max_function_calls=chat_request.max_function_calls,
-            files=files  # Pass the actual UploadFile objects
+            files=files,  # Pass the actual UploadFile objects
+            system_prompt=chat_request.system_prompt
         )
 
         return ChatWithFunctionsResponse(
@@ -190,10 +196,12 @@ async def get_available_functions():
         logger.error(f"Failed to get available functions: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve available functions")
 
+
 # Error handlers
 async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
     """Handle rate limit exceeded errors."""
     return _rate_limit_exceeded_handler(request, exc)
+
 
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle general exceptions."""

@@ -22,6 +22,7 @@ class GeminiServiceError(Exception):
     """Custom exception for Gemini service errors."""
     pass
 
+
 class GeminiService:
     """Service for interacting with Google's Gemini API using the official SDK."""
 
@@ -148,7 +149,7 @@ class GeminiService:
         self,
         messages: List[ChatMessage],
         file_content_map: Dict[str, Any] = None
-    ) -> (List[types.Content], set): # type: ignore
+    ) -> (List[types.Content], set):  # type: ignore
         """Convert ChatMessage objects to SDK Content format, including files."""
         formatted = []
         processed_filenames = set()
@@ -203,7 +204,8 @@ class GeminiService:
         conversation_history: List[ChatMessage] = None,
         model: str = "gemini-2.5-flash",
         temperature: float = 0.7,
-        max_tokens: int = 1000
+        max_tokens: int = 1000,
+        system_prompt: str = None
     ) -> str:
         """Get complete chat response from Gemini API using the SDK."""
         start_time = time.time()
@@ -230,16 +232,22 @@ class GeminiService:
             ]
 
             # Call the SDK's generate_content with proper config
+            config_params = {
+                "temperature": generation_config["temperature"],
+                "top_p": generation_config["top_p"],
+                "top_k": generation_config["top_k"],
+                "max_output_tokens": generation_config["max_output_tokens"],
+                "candidate_count": generation_config["candidate_count"],
+            }
+            
+            # Only add system_instruction if system_prompt is provided
+            if system_prompt is not None:
+                config_params["system_instruction"] = system_prompt.strip()
+            
             response = self.client.models.generate_content(
                 model=model_name,
                 contents=contents,
-                config=types.GenerateContentConfig(
-                    temperature=generation_config["temperature"],
-                    top_p=generation_config["top_p"],
-                    top_k=generation_config["top_k"],
-                    max_output_tokens=generation_config["max_output_tokens"],
-                    candidate_count=generation_config["candidate_count"],
-                )
+                config=types.GenerateContentConfig(**config_params)
             )
 
             elapsed_time = time.time() - start_time
@@ -259,7 +267,8 @@ class GeminiService:
         temperature: float = 0.7,
         max_tokens: int = 1000,
         max_function_calls: int = 5,
-        files: List[UploadFile] = None
+        files: List[UploadFile] = None,
+        system_prompt: str = None
     ) -> Dict[str, Any]:
         """Get chat response with function calling support and file attachments."""
         start_time = time.time()
@@ -331,17 +340,23 @@ class GeminiService:
             # Main conversation loop with function calling
             for call_count in range(max_function_calls):
                 # Call the model with tools
+                config_params = {
+                    "temperature": generation_config["temperature"],
+                    "top_p": generation_config["top_p"],
+                    "top_k": generation_config["top_k"],
+                    "max_output_tokens": generation_config["max_output_tokens"],
+                    "candidate_count": generation_config["candidate_count"],
+                    "tools": [tool]
+                }
+
+                # Only add system_instruction if system_prompt is provided
+                if system_prompt is not None:
+                    config_params["system_instruction"] = system_prompt.strip()
+
                 response = self.client.models.generate_content(
                     model=model_name,
                     contents=contents,
-                    config=types.GenerateContentConfig(
-                        temperature=generation_config["temperature"],
-                        top_p=generation_config["top_p"],
-                        top_k=generation_config["top_k"],
-                        max_output_tokens=generation_config["max_output_tokens"],
-                        candidate_count=generation_config["candidate_count"],
-                        tools=[tool]
-                    )
+                    config=types.GenerateContentConfig(**config_params)
                 )
 
                 # Check if the model wants to call functions
