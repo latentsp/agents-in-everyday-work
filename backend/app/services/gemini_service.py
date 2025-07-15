@@ -223,20 +223,13 @@ class GeminiService:
 
             logger.info(f"Starting chat with model {model_name}, history length: {len(history)}")
 
-            # Prepare contents: start with system prompt if provided, then history + new message
-            contents = []
-            
-
-            # Add conversation history
-            contents.extend(history)
-            
-            # Add current user message
-            contents.append(
+            # Prepare contents: history + new message as user
+            contents = history + [
                 types.Content(
                     role="user",
                     parts=[types.Part.from_text(text=message)]
                 )
-            )
+            ]
 
             # Call the SDK's generate_content with proper config
             config_params = {
@@ -327,19 +320,13 @@ class GeminiService:
                     else:
                         logger.warning(f"Unsupported file type for new attachment: {mime_type} for {file.filename}")
 
-            # Prepare contents: start with system prompt if provided, then history + new message with attachments
-            contents = []
-
-            # Add conversation history
-            contents.extend(history)
-            
-            # Add current user message with attachments
-            contents.append(
+            # Prepare contents: history + new message with attachments
+            contents = history + [
                 types.Content(
                     role="user",
                     parts=user_parts
                 )
-            )
+            ]
 
             # Get function declarations
             function_declarations = self.function_tools.get_function_declarations()
